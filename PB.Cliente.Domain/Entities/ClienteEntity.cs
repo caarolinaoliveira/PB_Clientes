@@ -5,7 +5,7 @@ using PB.Cliente.Domain.Exceptions;
 namespace PB.Cliente.Domain.Entities
 {
 
-    public class Cliente : Entity
+    public class ClienteEntity : Entity
     {
         public string Nome { get; private set; }
         public string Email { get; private set; }
@@ -14,9 +14,9 @@ namespace PB.Cliente.Domain.Entities
         public DateOnly DataNascimento { get; private set; }
         public string Telefone { get; private set; }
 
-        protected Cliente() { }
+        protected ClienteEntity() { }
 
-        public Cliente(
+        public ClienteEntity(
             string nome,
             string email,
             string cpf,
