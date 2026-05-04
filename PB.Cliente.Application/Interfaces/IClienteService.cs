@@ -1,9 +1,8 @@
 
 namespace PB.Cliente.Application.Interfaces
 {
-    public interface IClienteDomainService
+    public interface IClienteService
     {
-        // Defina os métodos de domínio relacionados ao cliente aqui
     }
     
 }
