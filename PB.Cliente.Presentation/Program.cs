@@ -1,5 +1,11 @@
 using PB.Cliente.Infrastructure.Context;
+using PB.Cliente.Application.Services;
+using PB.Cliente.Application.Interfaces;
+using PB.Cliente.Domain.Interfaces;
+using PB.Cliente.Infrastructure.Repository;
 using Microsoft.EntityFrameworkCore;
+using PB.Cliente.Presentation.Middlewares;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +16,9 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<ClienteDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
     
+
+builder.Services.AddScoped<IClienteService, ClienteService>();
+builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -17,6 +26,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseHttpsRedirection();
 
