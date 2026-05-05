@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using RabbitMQ.Client;
 using PB.Proposta.Application.Interfaces;
 using PB.Proposta.Application.Services;
 using PB.Proposta.Domain.Interfaces;
@@ -6,9 +7,12 @@ using PB.Proposta.Infrastructure.Context;
 using PB.Proposta.Infrastructure.Messaging;
 using PB.Proposta.Infrastructure.Repository;
 using PB.Proposta.Infrastructure.Services;
-using RabbitMQ.Client;
 
-var builder = Host.CreateApplicationBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<PropostaDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -25,6 +29,7 @@ builder.Services.AddSingleton<IConnection>(sp =>
     return factory.CreateConnection();
 });
 
+
 builder.Services.AddScoped<IPropostaRepository, PropostaRepository>();
 builder.Services.AddScoped<IPropostaService, PropostaService>();
 builder.Services.AddScoped<IMessagePublisher, RabbitMQPublisher>();
@@ -32,12 +37,20 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddHostedService<RabbitMQConsumer>();
 
-var host = builder.Build();
+var app = builder.Build();
 
-using (var scope = host.Services.CreateScope())
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<PropostaDbContext>();
     await db.Database.MigrateAsync();
 }
 
-await host.RunAsync();
+app.MapControllers();
+
+app.Run();
