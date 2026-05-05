@@ -7,5 +7,6 @@ namespace PB.Cliente.Domain.Interfaces
     {
         Task<ClienteEntity?> ObterPorCpfAsync(string cpf);
         Task<ClienteEntity?> ObterPorIdAsync(Guid id);
+        Task<ClienteEntity?> ObterPorEmailAsync(string email);
     }
 }

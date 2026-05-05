@@ -26,6 +26,11 @@ namespace PB.Cliente.Application.Services
                 throw new ConflictException("CPF já cadastrado.");
             }
 
+            if (await _clienteRepository.ObterPorEmailAsync(request.Email) != null) 
+            {
+                throw new ConflictException("Email já cadastrado.");
+            }
+
             var cliente = new ClienteEntity(
                 request.Nome,
                 request.Email,
