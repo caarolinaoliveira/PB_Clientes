@@ -59,5 +59,23 @@ namespace PB.Cliente.Application.Services
                 Status = cliente.Status.ToString()
             };
         }
+
+        public async Task<ClienteResponse?> ObterClientePorId(Guid id)
+        {
+            var cliente = await _clienteRepository.ObterPorIdAsync(id);
+            if (cliente == null)
+                throw new NotFoundException("Cliente não encontrado.");
+
+            return new ClienteResponse
+            {
+                Id = cliente.Id,
+                Nome = cliente.Nome,
+                Email = cliente.Email,
+                Cpf = cliente.Cpf,
+                DataNascimento = cliente.DataNascimento,
+                Telefone = cliente.Telefone,
+                Status = cliente.Status.ToString()
+            };
+        }
     }
 }

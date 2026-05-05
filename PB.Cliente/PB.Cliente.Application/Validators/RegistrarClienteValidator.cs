@@ -22,6 +22,9 @@ namespace PB.Cliente.Application.Validators
 
             RuleFor(x => x.Cpf)
                 .NotEmpty().WithMessage("O CPF é obrigatório.");
+            
+            RuleFor(x => x.Rg)
+                .NotEmpty().WithMessage("O RG é obrigatório");
         }
     }
 }
