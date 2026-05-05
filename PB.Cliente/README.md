@@ -116,9 +116,3 @@ Persiste no banco
 Publica → RabbitMQ: cliente.cadastrado
 ```
 
-## Decisões arquiteturais
-
-- **Clean Architecture**: separação em Domain, Application, Infrastructure e Presentation. A camada Application não conhece detalhes de infraestrutura.
-- **IMessagePublisher**: abstração na camada Application — permite trocar RabbitMQ por Azure Service Bus sem alterar regras de negócio.
-- **Validação de CPF duplicado**: feita na camada Application antes de persistir, retornando `409 Conflict` caso já exista.
-- **Evento rico**: o `ClienteCadastradoEvent` carrega todos os dados necessários para os serviços downstream, evitando consultas adicionais.
