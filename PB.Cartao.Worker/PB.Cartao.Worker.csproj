@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-PB.Cartao.Worker-db4886bd-8874-4ea4-8de1-72d875745b12</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="PB.Cartao.Application\PB.Cartao.Application.csproj" />
+    <ProjectReference Include="PB.Cartao.Infrastructure\PB.Cartao.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>
