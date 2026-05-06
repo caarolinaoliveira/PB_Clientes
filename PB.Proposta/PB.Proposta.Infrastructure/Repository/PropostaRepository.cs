@@ -24,7 +24,7 @@ namespace PB.Proposta.Infrastructure.Repository
 
         public async Task<PropostaEntity?> ObterPorIdAsync(Guid id)
         {
-            return await _dbSet.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
+            return await _dbSet.AsNoTracking().FirstOrDefaultAsync(p => p.ClienteId == id);
         }
 
         public async Task<PropostaEntity?> ObterPorClienteIdAsync(Guid clienteId)

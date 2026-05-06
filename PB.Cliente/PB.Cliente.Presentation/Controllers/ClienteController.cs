@@ -7,8 +7,9 @@ using System.Net;
 
 namespace PB.Cliente.Presentation.Controllers
 {
-    [Route("api/clientes")]
-    public class ClienteController : MainController
+    [ApiController]
+    [Route("api/v1/clientes")]
+    public class ClienteController : ControllerBase
     {
         private readonly IClienteService _clienteService;
 
@@ -17,13 +18,25 @@ namespace PB.Cliente.Presentation.Controllers
             _clienteService = clienteService;
         }
 
-        [HttpPost("registrar")]
+        [HttpPost("cadastrar")]
         [ProducesResponseType(typeof(ClienteResponse), (int)HttpStatusCode.Created)]        
         [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public async Task<IActionResult> RegistrarCliente(RegistrarClienteRequest request)
         {
             var response = await _clienteService.RegistrarCliente(request);
             return CreatedAtAction(nameof(RegistrarCliente), new { id = response.Id }, response);
+        }
+
+        [HttpGet("{id}")]
+        [ProducesResponseType(typeof(ClienteResponse), (int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.NotFound)]
+        public async Task<IActionResult> ObterClientePorId(Guid id)
+        {
+            var cliente = await _clienteService.ObterClientePorId(id);
+            if (cliente == null)
+                return NotFound();
+
+            return Ok(cliente);
         }
     }
     

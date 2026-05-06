@@ -16,5 +16,10 @@ namespace PB.Cliente.Infrastructure.Repository
         {
             return await DbSet.AsNoTracking().FirstOrDefaultAsync(c => c.Cpf == cpf);
         }
+
+        public async Task<ClienteEntity> ObterPorEmailAsync(string email)
+        {
+            return await DbSet.AsNoTracking().FirstOrDefaultAsync(c => c.Email == email);
+        }
     }
 }

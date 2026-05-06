@@ -1,16 +1,24 @@
 using PB.Proposta.Application.Events;
+using PB.Proposta.Application.Response;
 using PB.Proposta.Application.Interfaces;
 using PB.Proposta.Domain.Entities;
 using PB.Proposta.Domain.Interfaces;
+using PB.Proposta.Domain.Exceptions;
 
 namespace PB.Proposta.Application.Services
 {
     public class PropostaService : IPropostaService
     {
+        #region Propriedades
+
         private readonly IPropostaRepository _propostaRepository;
         private readonly IMessagePublisher _messagePublisher;
         private readonly IEmailService _emailService;
 
+        #endregion 
+
+        #region Construtor
+        
         public PropostaService(
             IPropostaRepository propostaRepository,
             IMessagePublisher messagePublisher,
@@ -21,6 +29,8 @@ namespace PB.Proposta.Application.Services
             _emailService = emailService;
         }
 
+        #endregion
+        #region Métodos Públicos
         public async Task ProcessarAsync(ClienteCadastradoEvent evento)
         {
             var propostaExistente = await _propostaRepository
@@ -61,9 +71,31 @@ namespace PB.Proposta.Application.Services
             await _messagePublisher.PublicarAsync(creditoAprovado, "credito.aprovado");
         }
 
+        public async Task<PropostaResponse> ObterPropostaPorIdCliente (Guid id)
+        {
+            var proposta = await _propostaRepository.ObterPorIdAsync(id);
+            if (proposta == null)
+                throw new NotFoundException("Proposta não encontrada.");
+
+            return new PropostaResponse
+            {
+
+                PropostaId = proposta.Id,
+                ClienteId = proposta.ClienteId,
+                LimiteAprovado = proposta.LimiteAprovado,
+                QuantidadeCartoes = proposta.QuantidadeCartoes,
+                OcorridoEm = proposta.CriadaEm
+            };
+        }
+
+        #endregion
+
+        #region Métodos Privados 
+
         private int GerarScore()
         {
             return new Random().Next(0, 1001);
         }
+        #endregion
     }
 }
