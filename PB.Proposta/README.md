@@ -5,7 +5,7 @@ Microsserviço responsável pela análise de crédito. Consome o evento `Cliente
 ## Tecnologias
 
 - .NET 8
-- Worker Service (BackgroundService)
+- ASP.NET Core Web API + BackgroundService
 - Entity Framework Core + SQL Server
 - RabbitMQ.Client 6.8.1
 - Clean Architecture + DDD
@@ -38,17 +38,32 @@ PB.Proposta/
 
 ## Como rodar localmente
 
-### 1. Subir a infraestrutura (RabbitMQ + SQL Server)
+### 1. Subir a infraestrutura
 
-Na raiz do projeto (onde está o `docker-compose.yml`):
+Na raiz da solution (onde está o `docker-compose.yml`), sobe o RabbitMQ e o SQL Server:
 
 ```bash
 docker-compose up -d rabbitmq sqlserver
 ```
 
+Confirma que os containers estão rodando:
+
+```bash
+docker ps
+```
+
+Você deve ver:
+
+```
+pb_rabbitmq    → portas 5672 e 15672
+pb_sqlserver   → porta 1433
+```
+
+> Painel do RabbitMQ disponível em http://localhost:15672 com usuário `guest` e senha `guest`
+
 ### 2. Configurar o appsettings
 
-No arquivo `PB.Proposta/appsettings.json`, configure:
+No arquivo `PB.Proposta/appsettings.json`, configure as credenciais de acordo com o ambiente:
 
 ```json
 {
@@ -63,7 +78,7 @@ No arquivo `PB.Proposta/appsettings.json`, configure:
 }
 ```
 
-> Para usar o Azure SQL Server, substitua o `Initial Catalog` para `PB_Propostas` e ajuste as credenciais.
+> Para usar o Azure SQL Server, substitua a connection string mantendo `Database=PB_Propostas`.
 
 ### 3. Criar e aplicar migrations
 
@@ -73,19 +88,52 @@ dotnet ef migrations add InitialCreate --project PB.Proposta.Infrastructure --st
 dotnet ef database update --project PB.Proposta.Infrastructure --startup-project .
 ```
 
-> A migration também é aplicada automaticamente na inicialização via `MigrateAsync()`.
+> A migration também é aplicada automaticamente na inicialização via `MigrateAsync()` — em desenvolvimento não é necessário rodar manualmente.
 
-### 4. Rodar o Worker
+### 4. Rodar o serviço
 
 ```bash
 cd PB.Proposta
 dotnet run
 ```
 
-O Worker ficará aguardando mensagens na fila `cliente.cadastrado`:
+O consumer ficará aguardando mensagens na fila `cliente.cadastrado`:
 
 ```
 [CONSUMER] Aguardando mensagens na fila cliente.cadastrado...
+```
+
+A API estará disponível para consulta de propostas em:
+
+```
+GET http://localhost:{porta}/api/propostas/{clienteId}
+```
+
+## Infraestrutura Docker
+
+O `docker-compose.yml` sobe dois serviços compartilhados entre todos os microsserviços:
+
+| Container | Imagem | Porta | Uso |
+|---|---|---|---|
+| pb_rabbitmq | rabbitmq:3-management | 5672 / 15672 | Broker de mensagens + painel web |
+| pb_sqlserver | mssql/server:2022 | 1433 | Banco de dados SQL Server |
+
+Os dados são persistidos em volumes Docker (`rabbitmq_data` e `sqlserver_data`) — reiniciar os containers não apaga filas nem bancos.
+
+Comandos úteis:
+
+```bash
+# Parar os containers
+docker-compose down
+
+# Parar e apagar todos os dados (reset total)
+docker-compose down -v
+
+# Ver logs do RabbitMQ
+docker logs pb_rabbitmq
+
+# Ver logs do SQL Server
+docker logs pb_sqlserver
 ```
 
 ## Fluxo do evento
@@ -99,7 +147,7 @@ Calcula score (0–1000)
         ↓
 Cria PropostaEntity (regras aplicadas no Domain)
         ↓
-Persiste no banco
+Persiste no banco (PB_Propostas)
         ↓
 Negada → [EMAIL] Proposta negada → fim
         ↓
@@ -108,3 +156,14 @@ Aprovada → [EMAIL] Proposta aprovada
 Publica → RabbitMQ: credito.aprovado
 ```
 
+## Resiliência
+
+O consumer implementa retry automático via `BasicNack(requeue: true)` — em caso de falha no processamento, a mensagem é devolvida à fila e reprocessada automaticamente.
+
+## Decisões arquiteturais
+
+- **API + BackgroundService**: a API expõe o endpoint de consulta de propostas enquanto o consumer roda em background no mesmo host, sem necessidade de dois processos separados.
+- **Idempotência**: antes de processar, verifica se já existe uma proposta para o `ClienteId`. Protege contra reprocessamento de mensagens duplicadas em cenários de retry.
+- **Regras de negócio no Domain**: a `PropostaEntity` aplica as regras de score internamente no construtor — o `PropostaService` não conhece os valores de score.
+- **Migration automática**: o banco é criado e atualizado automaticamente na inicialização via `MigrateAsync()`.
+- **Evento rico**: o `CreditoAprovadoEvent` carrega todos os dados necessários para o MS Cartão, evitando consultas adicionais entre serviços.
