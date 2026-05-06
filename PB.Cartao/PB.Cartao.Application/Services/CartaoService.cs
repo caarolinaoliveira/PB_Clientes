@@ -1,7 +1,9 @@
 using PB.Cartao.Application.Events;
 using PB.Cartao.Application.Interfaces;
+using PB.Cartao.Application.Response;
 using PB.Cartao.Domain.Entities;
 using PB.Cartao.Domain.Interfaces;
+using PB.Cartao.Domain.Exceptions;
 
 namespace PB.Cartao.Application.Services
 {
@@ -27,7 +29,7 @@ namespace PB.Cartao.Application.Services
                 .ObterPorClienteIdAsync(evento.ClienteId);
 
             if (cartoesExistentes.Count >= evento.QuantidadeCartoes)
-                return;
+                throw new ConflictException("Quantidade de cartões já emitidos é igual ou superior à quantidade aprovada.");
 
             for (int i = cartoesExistentes.Count + 1; i <= evento.QuantidadeCartoes; i++)
             {
@@ -61,6 +63,23 @@ namespace PB.Cartao.Application.Services
 
                 await _messagePublisher.PublicarAsync(cartaoEmitido, "cartao.emitido");
             }
+
+        }
+
+        public async Task<List<CartaoResponse>> BuscarCartaoPorIdCliente(Guid clienteId)
+        {
+            var cartoes = await _cartaoRepository.ObterPorClienteIdAsync(clienteId);
+
+            if (cartoes == null || !cartoes.Any())
+                throw new NotFoundException("Nenhum cartão encontrado para o cliente.");
+
+            return cartoes.Select(cartao => new CartaoResponse
+            {
+                Limite = cartao.Limite,
+                Sequencial = cartao.Sequencial,
+                NumeroCartao = cartao.Numero,
+                CriadoEm = cartao.CriadoEm
+            }).ToList();
         }
     }
 }
